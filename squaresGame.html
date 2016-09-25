@@ -1,0 +1,650 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Squares Game</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <script>
+        function buildGrid() {
+            var x;
+            var y;
+            x = getGameSize();
+            y = x;
+
+            var myGrid = document.getElementById("gameGrid");
+
+            x = x * 2 + 1;
+            y = y * 2 + 1;
+
+            // Remove rows to set table
+            resetRows();
+
+            // Enable reset button for clearing game table
+            document.getElementById("btnReset").disabled = false;
+
+            // Add Rows and Columns with labels
+            // Define guards to set styling of table
+            var oddCell;
+            var oddRow;
+            var oddColumn;
+            oddCell = 1;
+            oddRow = 1;
+            oddColumn = 1;
+
+
+            for (i = 0; i < x; i++) {
+                var row = myGrid.insertRow();
+                var boxID;
+                // Set row styles based on odd or even rows
+                if (oddRow == 1) {
+                    row.style.height = "1px";
+                    oddRow = 0;
+                    boxID = "boxpH_";
+                } else {
+                    row.style.height = "30px";
+                    oddRow = 1;
+                    boxID = "boxpV_";
+                }
+
+                // Insert required cells with styles
+                for (n = 0; n < y; n++) {
+                    var cell = row.insertCell();
+
+                    // Set cell id
+                    if (i > 9 && n > 9) {
+                        cell.id = boxID + i + "_" + n;
+                    }
+                    else if (n > 9) {
+                        cell.id = boxID + "0" + i + "_" + n;
+                    }
+                    else if (i > 9) {
+                        cell.id = boxID + i + "_0" + n;
+                    }
+                    else {
+                        cell.id = boxID + "0" + i + "_0" + n;
+                    }
+
+                    cell.style.fontSize = "xx-small";
+                    cell.style.color = "lightgoldenrodyellow";
+                    cell.addEventListener("click", playerAction, false);
+
+                    // Set internal value for game play
+                    if (oddCell == 1) {
+                        oddCell = 0;
+                    } else {
+                        cell.innerHTML = oddCell;
+                        oddCell = 1;
+                    }
+
+                    // Set column width based on odd or even columns
+                    if (i == 0 && oddColumn == 1) {
+                        cell.style.width = "1px";
+                        oddColumn = 0;
+                    } else if (i == 0 && oddColumn == 0) {
+                        cell.style.width = "30px";
+                        oddColumn = 1;
+                    }
+
+                }
+
+            }
+            // Add the player scores sections
+            addPlayers();
+        }
+
+        function playerAction() {
+
+            // Set line clicked
+            if (this.innerHTML == "0") {
+                this.innerHTML = "1";
+                this.style.backgroundColor = "Black";
+                this.style.color = "Black";
+
+                if (this.id.substring(4, 5) == "H") {
+                    // Horizotal line check
+                    var tempIDA = this.id;
+                    var x = Number(tempIDA.substring(6, 8));
+                    var y = Number(tempIDA.substring(9, 11));
+                    checkH(x, y);
+                }
+                else {
+                    // Veritical Line Check
+                    var tempIDB = this.id;
+                    var x = Number(tempIDB.substring(6, 8));
+                    var y = Number(tempIDB.substring(9, 11));
+                    checkV(x, y);
+
+                }
+
+                if (gameComplete()) {
+                    var myWinner = getWinner();
+                    document.getElementById("gameWinner").innerHTML = myWinner;
+                    $('#winnerModal').modal('show');
+                }
+                
+            }
+        }
+
+        function checkH(r, c) {
+            // Check based on Horizontal line being clicked
+            var isBox = true;
+
+            var cUp;
+            var cUpLeft;
+            var cUpRight;
+
+            // Check upper horizontal line, Check for null first to cater for elements outside
+            if (document.getElementById("boxpH_" + padNumber(r - 2) + "_" + padNumber(c)) == null) {
+                cUp = true;
+            }
+            else {
+                if (document.getElementById("boxpH_" + padNumber(r - 2) + "_" + padNumber(c)).innerHTML == "1") {
+                    cUp = true;
+                }
+                else {
+                    cUp = false;
+                }
+            }
+
+            // Check Upper left vertical line check for null first to cater for border boxes
+            if (document.getElementById("boxpV_" + padNumber(r - 1) + "_" + padNumber(c - 1)) == null) {
+                cUpLeft = true;
+            }
+            else {
+                if (document.getElementById("boxpV_" + padNumber(r - 1) + "_" + padNumber(c - 1)).innerHTML == "1") {
+                    cUpLeft = true;
+                }
+                else {
+                    cUpLeft = false;
+                }
+            }
+
+            // Check upper right vertical line, check for null first to cater for border boxes
+            if (document.getElementById("boxpV_" + padNumber(r - 1) + "_" + padNumber(c + 1)) == null) {
+                cUpRight = true;
+            }
+            else {
+                if (document.getElementById("boxpV_" + padNumber(r - 1) + "_" + padNumber(c + 1)).innerHTML == "1") {
+                    cUpRight = true;
+                }
+                else {
+                    cUpRight = false;
+                }
+            }
+
+            // Determine if the above 3 lines have been set to make a complete square
+            if (cUp && cUpLeft && cUpRight) {
+                
+
+
+                // Check above box exists
+                if (document.getElementById("boxpV_" + padNumber(r - 1) + "_" + padNumber(c)) != null) {
+                        // Above box is complete set player and colour of box
+                        var completeBox
+                        completeBox = document.getElementById("boxpV_" + padNumber(r - 1) + "_" + padNumber(c));
+
+                        completeBox.innerHTML = document.getElementById("player").innerHTML;
+                        completeBox.style.backgroundColor = "Red";
+                        completeBox.style.textAlign = "center";
+                        // Set box complete
+                        isBox = true;
+                } else {
+                    // Because above box does not exist a square was not made.
+                    isBox = false;
+                }
+
+            } else {
+                isBox = false;
+            }
+
+            // If box was completed update scores
+            if (isBox) {
+                updateScore(document.getElementById("player").innerHTML);
+            }
+
+            // Check lower square for complete box.
+            var cDown;
+            var cDownLeft;
+            var cDownRight;
+
+            // Check lower horizontal line, Check for null first to cater for elements outside
+            if (document.getElementById("boxpH_" + padNumber(r + 2) + "_" + padNumber(c)) == null) {
+                cDown = true;
+            }
+            else {
+                if (document.getElementById("boxpH_" + padNumber(r + 2) + "_" + padNumber(c)).innerHTML == 1) {
+                    cDown = true;
+                } else {
+                    cDown = false;
+                }
+            }
+
+            // Check lower left line, Check for null first to cater for elements outside
+            if (document.getElementById("boxpV_" + padNumber(r + 1) + "_" + padNumber(c - 1)) == null) {
+                cDownLeft = true;
+            }
+            else {
+                if (document.getElementById("boxpV_" + padNumber(r + 1) + "_" + padNumber(c - 1)).innerHTML == 1) {
+                    cDownLeft = true;
+                } else {
+                    cDownLeft = false;
+                }
+            }
+
+            // Check lower right line, Check for null first to cater for elements outside
+            if (document.getElementById("boxpV_" + padNumber(r + 1) + "_" + padNumber(c + 1)) == null) {
+                cDownRight = true;
+            } else {
+                if (document.getElementById("boxpV_" + padNumber(r + 1) + "_" + padNumber(c + 1)).innerHTML == 1) {
+                    cDownRight = true;
+                } else {
+                    cDownRight = false;
+                }
+            }
+
+            // Confirm all other sides are set.
+            if (cDown && cDownLeft && cDownRight) {
+        
+
+                //Check if a box exists below
+                if (document.getElementById("boxpV_" + padNumber(r + 1) + "_" + padNumber(c)) != null) {
+                    //Below box is complete set player and colour of box
+                    var completeBox
+                    completeBox = document.getElementById("boxpV_" + padNumber(r + 1) + "_" + padNumber(c));
+
+                    completeBox.innerHTML = document.getElementById("player").innerHTML;
+                    completeBox.style.backgroundColor = "Red";
+                    completeBox.style.textAlign = "center";
+
+                    // the box true should be set once we know the box exists
+                    isBox = true;
+                    // completed update player score 
+                    updateScore(document.getElementById("player").innerHTML);
+
+                } 
+                //Note does not set false because upper box logic takes care of this process.
+            }
+
+            // Changes player if box was not completed
+            if (isBox == false) {
+                playerTurn();
+            } 
+
+        }
+
+        function checkV(r, c) {
+            //Check based on vertical line being clicked
+            var isBox = true;
+
+            var cRight;
+            var cRightTop;
+            var cRightBottom;
+
+            // Check right hand box vertical, check for null first to cater for borders
+            if (document.getElementById("boxpV_" + padNumber(r) + "_" + padNumber(c + 2)) == null) {
+                cRight = true;
+            }
+            else {
+                if (document.getElementById("boxpV_" + padNumber(r) + "_" + padNumber(c + 2)).innerHTML == "1") {
+                    cRight = true;
+                }
+                else {
+                    cRight = false;
+                }
+            }
+
+            // Check right hand box upper horizontial, check for null first to cater for borders
+            if (document.getElementById("boxpH_" + padNumber(r - 1) + "_" + padNumber(c + 1)) == null) {
+                cRightTop = true;
+            }
+            else {
+                if (document.getElementById("boxpH_" + padNumber(r - 1) + "_" + padNumber(c + 1)).innerHTML == "1") {
+                    cRightTop = true;
+                }
+                else {
+                    cRightTop = false;
+                }
+            }
+
+            // Check right hand box lower horizontial, check for null first to cater for borders
+            if (document.getElementById("boxpH_" + padNumber(r + 1) + "_" + padNumber(c + 1)) == null) {
+                cRightBottom = true;
+            }
+            else {
+                if (document.getElementById("boxpH_" + padNumber(r + 1) + "_" + padNumber(c + 1)).innerHTML == "1") {
+                    cRightBottom = true;
+                }
+                else {
+                    cRightBottom = false;
+                }
+            }
+
+            // Check right hand box is complete
+            if (cRight && cRightTop && cRightBottom) {
+
+                // Check the box exists
+                if (document.getElementById("boxpV_" + padNumber(r) + "_" + padNumber(c + 1)) != null) {
+                    //Right box is complete set player and colour of box
+                    var completeBox
+                    completeBox = document.getElementById("boxpV_" + padNumber(r) + "_" + padNumber(c + 1));
+
+                    //Set the correct player
+                    completeBox.innerHTML = document.getElementById("player").innerHTML;
+                    completeBox.style.backgroundColor = "Red";
+                    completeBox.style.textAlign = "center";
+                    // Set box complete
+                    isBox = true;
+                } else {
+                    // Because right box does not exist a square was not made.
+                    isBox = false;
+                }
+
+            } else {
+                isBox = false;
+            }
+
+            // If box was completed update scores
+            if (isBox) {
+                updateScore(document.getElementById("player").innerHTML);
+            }
+
+            //Check Left hand 
+            var cLeft;
+            var cLeftTop;
+            var cLeftBottom;
+           
+            // Check left hand box vertical, Check for null first to cater for borders
+            if (document.getElementById("boxpV_" + padNumber(r) + "_" + padNumber(c - 2)) == null) {
+                cLeft = true;
+            } else {
+                if (document.getElementById("boxpV_" + padNumber(r) + "_" + padNumber(c - 2)).innerHTML == "1") {
+                    cLeft = true;
+                } else {
+                    cLeft = false;
+                }
+            }
+
+
+            // Check left hand box top, Check for null first to cater for borders
+            if (document.getElementById("boxpH_" + padNumber(r - 1) + "_" + padNumber(c - 1)) == null) {
+                cLeftTop = true;
+            } else {
+                if (document.getElementById("boxpH_" + padNumber(r - 1) + "_" + padNumber(c - 1)).innerHTML == "1") {
+                    cLeftTop = true;
+                } else {
+                    cLeftTop = false;
+                }
+            }
+
+            // Check left hand box bottom, Check for null first to cater for borders
+            if (document.getElementById("boxpH_" + padNumber(r + 1) + "_" + padNumber(c - 1)) == null) {
+                cLeftBottom = true;
+            } else {
+                if (document.getElementById("boxpH_" + padNumber(r + 1) + "_" + padNumber(c - 1)).innerHTML == "1") {
+                    cLeftBottom = true;
+                } else {
+                    cLeftBottom = false;
+                }
+            }
+
+            if (cLeft && cLeftTop && cLeftBottom) {
+
+                if(document.getElementById("boxpV_" + padNumber(r) + "_" + padNumber(c - 1)) != null) {
+                    //Left box is complete set player and colour of box
+                    var completeBox
+                    completeBox = document.getElementById("boxpV_" + padNumber(r) + "_" + padNumber(c - 1));
+
+                    //Set the correct player
+                    completeBox.innerHTML = document.getElementById("player").innerHTML;
+                    completeBox.style.backgroundColor = "Red";
+                    completeBox.style.textAlign = "center";
+
+                    // the box true should be set once we know the box exists
+                    isBox = true;
+                    // If box was completed update player score
+                    updateScore(document.getElementById("player").innerHTML);
+
+                }
+                //Note does not set false because right box logic takes care of this process.
+            }
+
+            // Changes player if box was not completed
+            if (isBox == false) {
+                playerTurn();
+            }
+
+        }
+
+        
+        function padNumber(n) {
+            // Converts numbers into required 2 digit padding
+            var twoDString;
+            twoDString = "";
+
+            if (n > 9) {
+                twoDString = n.toString();
+            }
+            else {
+                twoDString = "0" + n;
+
+            }
+
+            return twoDString;
+        }
+
+
+        function playerTurn() {
+            // Switch player based on current player setting. 
+            var currentPlayer = Number(document.getElementById("player").innerHTML.substring(2,1));
+            var maxPlayer = Number($("#playerScores").find("span").length);
+
+            if (currentPlayer == maxPlayer) {
+                document.getElementById("player").innerHTML = "P1";
+            }
+            else {
+                document.getElementById("player").innerHTML = "P" + (currentPlayer + 1);
+            }
+        }
+
+        function resetRows() {
+            // Delete all rows from the game table
+            var myGrid = document.getElementById("gameGrid");
+            while (myGrid.rows.length > 0) {
+                myGrid.deleteRow(0);
+            }
+
+            // Reset player to player 1
+            document.getElementById("player").innerHTML = "P1";
+            
+            // Reset scores section to have no players
+            removePlayers();
+
+            // Disable reset button
+            document.getElementById("btnReset").disabled = true;
+        }
+
+
+        // For each row and column check odd numbers to determine if full grid is complete
+        // Loops through each row 
+        function gameComplete() {
+            var myGrid = document.getElementById("gameGrid");
+            var maxR = myGrid.rows.length;
+            var i = 1;
+            var gComplete = true;
+
+            while (i < maxR) {
+                if(checkColumns(myGrid.rows[i])){
+                    i = i + 2
+                } else { 
+                    gComplete = false;
+                    break;
+                }
+            }
+
+            return gComplete;
+        }
+
+        // Used to determine if each cell in a table row has been filled.
+        function checkColumns(myRow) {
+            var cComplete = true;
+            var maxC = myRow.cells.length;
+            var n = 1;
+
+            while (n < maxC){
+                if(myRow.cells[n].innerHTML == ""){
+                    cComplete = false;
+                    break;
+                } else {
+                    n = n + 2;
+                }
+            }
+                       
+            return cComplete;
+        }
+        
+        //Retrieve game size from game options
+        function getGameSize() {
+            // use jquery to determine number of squares
+            return $("input[name='squares']:checked").val();
+        }
+
+        function getNumberOfPlayers() {
+            // use jquery to determine number of players selected
+            return $("input[name='players']:checked").val();
+        }
+
+        // Inserts required number of players into scores section.
+        function addPlayers() {
+            var nbrPlayers = getNumberOfPlayers();
+            var nPlayers;
+
+            for (nPlayers = 0; nPlayers < nbrPlayers; nPlayers++) {
+                var myText;
+                myText = '<div id="P' + (nPlayers + 1) + '">P' + (nPlayers + 1) + '<span id="P' + (nPlayers + 1) + 'Score" class="badge">0</span></div>';
+                $("#playerScores").append(myText);
+            }
+        }
+
+        // Remove players from the scores section
+        function removePlayers() {
+            $('#playerScores').empty();
+        }
+
+        // Update player scores based on sqares being completed
+        function updateScore(currentPlayer) {
+
+            var myCurrentPlayer = "#" + currentPlayer + "Score";
+            $(myCurrentPlayer).text(Number($(myCurrentPlayer).text()) + 1);
+
+        }
+
+        function getWinner() {
+            // Find largest number or if equal draw
+            // Using jquery loop through the playerScores elements
+            var topScore = 0;
+            var winner = "no one";
+
+            $("#playerScores").find("span").each(function () {
+                if (Number($(this).text()) > topScore) {
+                    topScore = Number($(this).text());
+                    winner = "Player " + $(this).attr("id").substring(2,1) + " with a score of " + topScore + ".";
+                } else if (Number($(this).text()) == topScore) {
+                    winner = "The game is a draw.";
+                }
+            });
+
+            return winner;
+        }
+
+    </script>
+    <style>
+        .jumbotron {
+            background-color: lightgreen;
+            color: white;
+        }
+
+        .row {
+            background-color: lightgoldenrodyellow;
+        }
+
+        .gameArea {
+            background-color: lightgoldenrodyellow;
+        }
+    </style>
+</head>
+<body>
+    <div class="jumbotron text-center">
+        <h1>Squares Game</h1>
+    </div>
+    <div id="winnerModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">WINNER</h4>
+                </div>
+                <div class="modal-body">
+                    <p><em id="gameWinner"></em></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-3">
+                <div class="text-center">
+                    <h3>Turn: <em id="player">P1</em></h3>
+                </div>
+                <div class="gameArea">
+                    <h1><table id="gameGrid" border="1" align="center"></table></h1>
+                </div>
+            </div>
+            <div class="col-sm-2">
+                <h3>Scores</h3>
+                <div id="playerScores">
+                </div>
+            </div>
+            <div class="col-sm-2">
+                <h3>Options</h3>
+                <div class="btn-group">
+                    <button class="btn btn-primary btn-block" id="btnBuild" onclick="buildGrid()">Build</button>
+                    <button class="btn btn-primary btn-block" id="btnReset" onclick="resetRows()" disabled="true">Clear</button>
+                </div>
+            </div>
+            <div class="col-sm-2">
+                <h3>Players</h3>
+                <div class="radio">
+                    <label><input type="radio" name="players" checked="checked" value="2" />2 Players</label>
+                </div>
+                <div class="radio">
+                    <label><input type="radio" name="players" value="3" />3 Players</label>
+                </div>
+                <div class="radio">
+                    <label><input type="radio" name="players" value="4" />4 Players</label>
+                </div>
+            </div>
+            <div class="col-sm-2">
+                <h3>Game Size</h3>
+                <div class="radio">
+                    <label><input type="radio" name="squares" checked="checked" value="4" />4 x 4 Squares</label>
+                </div>
+                <div class="radio">
+                    <label><input type="radio" name="squares" value="6" />6 x 6 Squares</label>
+                </div>
+                <div class="radio">
+                    <label><input type="radio" name="squares" value="8" />8 x 8 Squares</label>
+                </div>
+            </div>
+            <div class="col-sm-1">
+                <!-- Empty Column to fill out -->
+            </div>
+        </div>
+    </div>
+</body>
+</html>
